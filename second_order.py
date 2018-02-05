@@ -127,16 +127,22 @@ def invert_hessian(hessian, num_parameters, hyperparameters):
     elif method == "pseudo":
         assert "minimum_eigenvalue_magnitude" in hyperparameters.keys(), \
             "pseudo method requires minimum_eigenvalue_magnitude"
-        eigenvalues, eigenvectors = tf.self_adjoint_eig(tf.expand_dims(hessian, axis=0))
+        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian)
         
         threshold = hyperparameters["minimum_eigenvalue_magnitude"]
-        keep = tf.reduce_sum(tf.cast(tf.greater_equal(eigenvalues, threshold), tf.int32))
+        keep = tf.greater_equal(tf.abs(eigenvalues), threshold)
         
-        truncated_eigenvalues = tf.squeeze(eigenvalues)[-keep:]
-        truncated_eigenvectors = tf.squeeze(eigenvectors)[:, -keep:]
+        truncated_eigenvalues = tf.boolean_mask(eigenvalues, keep, name="truncated_eigenvalues")
+        # earlier versions of tf don't have axis kwarg, so we tranpose, mask, then transpose back
+        truncated_eigenvectors = tf.transpose(tf.boolean_mask(tf.transpose(eigenvectors), keep),
+                                             name="truncated_eigenvectors")
+        
+        inverted_eigenvalues = tf.divide(1.0, truncated_eigenvalues)
 
-        inverse_hessian = tf.matmul(truncated_eigenvectors,
-                                    (1. / tf.expand_dims(truncated_eigenvalues, axis=0)) * truncated_eigenvectors,
+        rescaled_eigenvectors = tf.multiply(tf.expand_dims(inverted_eigenvalues, axis=0), truncated_eigenvectors,
+                                            name="rescaled_eigenvectors")
+        
+        inverse_hessian = tf.matmul(truncated_eigenvectors, rescaled_eigenvectors,
                                     transpose_b=True, name="inverse_hessian")
         
     else:
@@ -166,6 +172,28 @@ def compare_descent_methods(matrix_generator, N=5, num_steps=5, num_matrices=10,
                                                                        "gradient_descent", step_idx)[0]
                 
     return results
+
+def gradient_test(N, matrix_generator, num_newton_steps, hyperparameters=DEFAULTS):
+
+    random_matrix = matrix_generator(N)
+
+    initial_values = np.random.standard_normal(size=N).astype(np.float32)
+
+    quadratic_form = make_quadratic_form(random_matrix, initial_values, hyperparameters)
+
+    initial_output = get_result("output", initial_values, quadratic_form)
+    initial_gradients = get_result("gradients", initial_values, quadratic_form)[0]
+
+    final_output, final_values = minimize(quadratic_form, "newton", 2)
+    final_gradients = get_result("gradients", final_values, quadratic_form)[0]
+
+    print("output:\n" +
+          "\tinitial: {0}".format(initial_output),
+          "\tfinal: {0}".format(final_output))
+
+    print("gradient:\n" +
+          "\tinitial: {0}".format(np.linalg.norm(initial_gradients, 2)),
+          "\tfinal: {0}".format(np.linalg.norm(final_gradients, 2)))
 
 def normalize_runs(results):
     results = np.divide(results, results[0,:,:,:][None,:,:,:])
