@@ -102,3 +102,6 @@ ENV/
 
 # MNIST dataset
 MNIST_data/
+
+# eigspectrum_figures
+eigspectrum/

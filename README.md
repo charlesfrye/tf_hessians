@@ -1,2 +1,1 @@
-# tf_hessians
-hessians and newton's method in tf
+# Finding Critical Points with TensorFlow
