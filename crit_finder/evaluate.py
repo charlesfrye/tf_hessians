@@ -38,7 +38,7 @@ def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=gra
 
     random_matrix = matrix_generator(N)
 
-    initial_values = np.random.standard_normal(size=N).astype(np.float32)
+    initial_values = graphs.generate_initial_values(N)
 
     quadratic_form = graphs.make_quadratic_form(random_matrix, initial_values, hyperparameters)
 

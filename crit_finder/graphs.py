@@ -401,6 +401,8 @@ def make_feed_dict(input_placeholders, input_vector):
     
     return feed_dict
 
+# functions for generating various random matrices
+
 def generate_gaussian(N):
     return 1/np.sqrt(N)*np.random.standard_normal(size=(N,N)).astype(np.float32)
 
