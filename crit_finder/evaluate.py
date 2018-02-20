@@ -1,6 +1,7 @@
 from . import graphs
 
 from matplotlib import pyplot as plt
+import matplotlib.ticker
 import seaborn as sns
 
 import numpy as np
@@ -175,7 +176,7 @@ def plot_results_condition_tests(kappas, results, flat_fractions, minimum_eigenv
                color='firebrick', linewidth=4, alpha=0.8,
                label="inverse eigenvalue threshold");
     plt.xticks(fontsize=16); plt.yticks(fontsize=16);
-    plt.ylabel(r"$\|\|\ \nabla f\ \|\|$", fontsize=24)
+    plt.ylabel(r"$\|\|\ \theta\ \|\|$", fontsize=24)
     plt.xlabel(r"$\kappa$, condition number", fontsize=24)
     plt.ylim(ylims)
     plt.legend(fontsize=16);
@@ -184,15 +185,15 @@ def plot_result_condition_test(kappas, result, flat_fraction):
     plt.loglog(kappas, result, label="{0}% of directions are numerically flat".format(100*flat_fraction),
                  linestyle='None', marker='.', markersize=24, alpha=0.75);
     
-def plot_condition_test_error_scaling(errors, ks):
+def plot_condition_test_distance_scaling(distances, ks):
     plt.figure(figsize=(12,6));
-    plt.loglog(ks, errors, label="observed error", linewidth=4);
+    plt.loglog(ks, distances, label="observed", linewidth=4);
     plt.loglog(ks, np.power(ks,0.5), label=r"$\sqrt{k}$ scaling, offset", linewidth=4);
     plt.legend(fontsize=16);
     plt.xticks(fontsize=16);
     plt.yticks(fontsize=16);
     plt.xlabel("$k$, number of flat directions", fontsize=24);
-    plt.ylabel("error", fontsize=24);
+    plt.ylabel(r"$\|\|\ \theta\ \|\|$", fontsize=24);
     
 # functions for plotting performance on neural networks
 
@@ -211,6 +212,7 @@ def plot_results(gd_results, crit_finder_results, crit_finder_name):
 
     axs[1].set_xlabel("batch index", fontsize=24);
     axs[1].tick_params(axis='both', which='major', labelsize=16)
+    axs[1].xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%d'))
     axs[1].set_title(crit_finder_name, fontsize=28)
     
 def compare_gradients_entrywise(gd_results, crit_finder_results, labels):
