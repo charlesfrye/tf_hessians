@@ -93,7 +93,7 @@ def plot_trajectories_comparison(results, algorithms=["gradient_descent","newton
     ax = plt.subplot(111)
     for matrix_idx in range(results.shape[1]):
         for algorithm_idx in range(results.shape[3]):
-            color = colors[algorithm]
+            color = colors[algorithm_idx]
             algorithm = algorithms[algorithm_idx]
             plt.plot(results[:,matrix_idx,:,algorithm_idx], color=color, linewidth=1, alpha=0.5, label=algorithm);
 
