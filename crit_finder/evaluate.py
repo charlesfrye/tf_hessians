@@ -296,11 +296,11 @@ def compare_gradients_entrywise(gd_results, crit_finder_results, labels):
     gradients = [gd_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
 
     for gradient, label in zip(gradients, labels):
-        plot_gradients_entrywise(ax, gradient, label=label)
+        plot_gradient_entrywise(ax, gradient, label=label)
 
     plt.legend(fontsize=16)
 
-def plot_gradients_entrywise(ax, gradient, label):
+def plot_gradient_entrywise(ax, gradient, label):
     """ plots sorted entries of a single gradient vector on ax
     with a log-scale for x and assigns legend entry label.
     """
