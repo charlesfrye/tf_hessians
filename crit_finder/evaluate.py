@@ -11,11 +11,11 @@ import scipy.integrate
 
 ## functions for testing the performance of descent methods on quadratic forms
 
-def compare_descent_methods(matrix_generator, N=5, num_steps=5, num_matrices=10, num_runs=5,
-                            methods=["gradient_descent","newton"],
+def compare_algorithms(matrix_generator, N=5, num_steps=5, num_matrices=10, num_runs=5,
+                            algorithms=["gradient_descent","newton"],
                            hyperparameters={"learning_rate":0.1, "newton_rate":1,
                                             "fudge_factor":1e-6, "inverse_method":"fudged"}):
-    """compare the gradient norms found by descent methods in methods list
+    """compare the gradient norms of results of running algorithms
     on num_matrices quadratic forms whose matrices are produced by matrix generator,
     which should be a function that takes a single argument, N, and returns a N by N matrix.
 
@@ -24,13 +24,13 @@ def compare_descent_methods(matrix_generator, N=5, num_steps=5, num_matrices=10,
     This is woefully inefficient, but works alright for num_steps less than 3.
 
     The results are returned as a 4-D array, results, with dimensions
-    [num_steps+1, num_matrices, num_runs, len(methods)].
+    [num_steps+1, num_matrices, num_runs, len(algorithms)].
     """
 
-    num_methods = len(methods)
+    num_algorithms = len(algorithms)
     matrices = [matrix_generator(N) for _ in range(num_matrices)]
 
-    results = np.zeros((num_steps+1, num_matrices, num_runs, num_methods))
+    results = np.zeros((num_steps+1, num_matrices, num_runs, num_algorithms))
 
     for matrix_idx, matrix in enumerate(matrices):
 
@@ -38,11 +38,11 @@ def compare_descent_methods(matrix_generator, N=5, num_steps=5, num_matrices=10,
 
             initial_values = np.random.standard_normal(size=N).astype(np.float32)
 
-            quadratic_form = graphs.make_quadratic_form(matrix, initial_values, hyperparameters)
+            quadratic_form = graphs.quadratics.make_quadratic_form(matrix, initial_values, hyperparameters)
             for step_idx in range(num_steps+1):
-                for method_idx, method in enumerate(methods):
-                    _, values =  graphs.minimize(quadratic_form, method, step_idx)
-                    results[step_idx, matrix_idx, run_idx, method_idx] = graphs.get_result("gradient_norm",
+                for algorithm_idx, algorithm in enumerate(algorithms):
+                    _, values =  graphs.quadratics.run_optimizer(quadratic_form, algorithm, step_idx)
+                    results[step_idx, matrix_idx, run_idx, algorithm_idx] = graphs.quadratics.get_result("gradient_norm",
                                                                            values, quadratic_form)
 
     return results
@@ -62,14 +62,14 @@ def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=gra
 
     random_matrix = matrix_generator(N)
 
-    initial_values = graphs.generate_initial_values(N)
+    initial_values = graphs.quadratics.generate_initial_values(N)
 
-    quadratic_form = graphs.make_quadratic_form(random_matrix, initial_values, hyperparameters)
+    quadratic_form = graphs.quadratics.make_quadratic_form(random_matrix, initial_values, hyperparameters)
 
-    initial_output = graphs.get_result("output", initial_values, quadratic_form)
-    initial_gradients = graphs.get_result("gradients", initial_values, quadratic_form)[0]
+    initial_output = graphs.quadratics.get_result("output", initial_values, quadratic_form)
+    initial_gradients = graphs.quadratics.get_result("gradients", initial_values, quadratic_form)[0]
 
-    final_output, final_values = graphs.minimize(quadratic_form, algorithm, num_steps)
+    final_output, final_values = graphs.quadratics.run_algorithm(quadratic_form, algorithm, num_steps)
     final_gradients = graphs.get_result("gradients", final_values, quadratic_form)[0]
 
     print("output:\n" +
@@ -193,11 +193,11 @@ def condition_test(kappas, hyperparameters, N=1000, k=100):
         eigvals = [1]*(N-k)+k*[1/kappa]
         matrix = np.diag(eigvals).astype(np.float32)
 
-        quadratic_form = graphs.make_quadratic_form(matrix, initial_values, hyperparameters)
+        quadratic_form = graphs.quadratics.make_quadratic_form(matrix, initial_values, hyperparameters)
 
-        _, values = graphs.minimize(quadratic_form, "newton", 1)
+        _, values = graphs.quadratics.run_algorithm(quadratic_form, "newton", 1)
 
-        gradients = graphs.get_result("gradients", values, quadratic_form)[0]
+        gradients = graphs.quadratics.get_result("gradients", values, quadratic_form)[0]
 
         if np.linalg.norm(gradients)>1e-4:
             print("convergence failed on kappa={0}".format(kappa))
@@ -263,9 +263,9 @@ def plot_condition_test_distance_scaling(distances, ks):
 
 ## functions for plotting performance on neural networks
 
-def plot_results(gd_results, crit_finder_results, crit_finder_name):
+def plot_results(optimizer_results, crit_finder_results, titles):
     """ plots gradient norms as a function of step given by Results instances
-    for g(radient) d(escent) and crit finder, the latter labeled by crit_finder_name.
+    for optimizer and crit finder, and adds titles to plots
     """
     f, axs = plt.subplots(nrows=1, ncols=2, figsize=(20,6), sharey=True)
 
@@ -274,7 +274,7 @@ def plot_results(gd_results, crit_finder_results, crit_finder_name):
     axs[0].set_ylabel(r"$\|\|\nabla f \|\|$",fontsize=24);
     axs[0].set_xlabel("batch index", fontsize=24);
     axs[0].tick_params(axis='both', which='major', labelsize=16)
-    axs[0].set_title("gradient descent", fontsize=28)
+    axs[0].set_title(names[0], fontsize=28)
 
     axs[1].plot(np.asarray(crit_finder_results.scalar_index)+gd_results.scalar_index[-1],
              crit_finder_results.gradient_norm, linewidth=4, color='C1')
@@ -282,18 +282,18 @@ def plot_results(gd_results, crit_finder_results, crit_finder_name):
     axs[1].set_xlabel("batch index", fontsize=24);
     axs[1].tick_params(axis='both', which='major', labelsize=16)
     axs[1].xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%d'))
-    axs[1].set_title(crit_finder_name, fontsize=28)
+    axs[1].set_title(names[1], fontsize=28)
 
-def compare_gradients_entrywise(gd_results, crit_finder_results, labels):
-    """compares the sorted entries of the first entry in gd_results.gradients (i.e. at initialization),
-    the first entry of crit_finder_results.gradients (i.e. after gradient descent has been run)
+def compare_gradients_entrywise(optimizer_results, crit_finder_results, labels):
+    """compares the sorted entries of the first entry in optimizer.gradients (i.e. at initialization),
+    the first entry of crit_finder_results.gradients (i.e. after optimizer has been run)
     and the last entry of crit_finder_results (i.e. after the crit_finder has stopped running.
     legend entries are given by labels.
     the x axis is scaled logarithmically.
     """
     f, ax = plt.subplots(nrows=1, ncols=1, figsize=(20,6),)
 
-    gradients = [gd_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
+    gradients = [optimizer_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
 
     for gradient, label in zip(gradients, labels):
         plot_gradient_entrywise(ax, gradient, label=label)
@@ -307,10 +307,10 @@ def plot_gradient_entrywise(ax, gradient, label):
     ax.semilogx(range(1,len(gradients)+1), sorted(gradients), linewidth=4, label=label)
     ax.tick_params(axis='both', which='major', labelsize=16)
 
-def compare_gradient_histograms(gd_results, crit_finder_results, titles, colors=['C0','C1','C2']):
+def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, colors=['C0','C1','C2']):
     """compares the log-scaled histogram of gradient entries for
-    the first entry in gd_results.gradients (i.e. at initialization),
-    the first entry of crit_finder_results.gradients (i.e. after gradient descent has been run)
+    the first entry in optimizer_results.gradients (i.e. at initialization),
+    the first entry of crit_finder_results.gradients (i.e. after optimizer has been run)
     and the last entry of crit_finder_results (i.e. after the crit_finder has stopped running.
 
 
