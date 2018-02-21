@@ -53,7 +53,7 @@ def make(matrix, initial_values, hyperparameters):
         generic.add_hess_ops(output, inputs, graph_dictionary)
 
         generic.add_optimizer(output, inputs, hyperparameters, graph_dictionary)
-        generic.add_crit_finder_ops(output, inputs, dimension, hyperparameters, graph_dictionary)
+        generic.add_crit_finder(output, inputs, dimension, hyperparameters, graph_dictionary)
 
     return QuadraticForm(graph, graph_dictionary)
 
