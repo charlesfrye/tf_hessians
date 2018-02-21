@@ -6,18 +6,16 @@ from collections import namedtuple
 Results = namedtuple("Results", ["cost", "gradient_norm", "scalar_index",
                                  "gradient", "parameters", "vector_index"])
 
-#not yet implemented
-TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_size", "tracking_batch_size",
-                                                        "track_every","print_tracking_data"])
+TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_size",
+                                                        "track_every", "tracking_batch_size",
+                                                        "print_tracking_data", "track_string"])
 
-def train_and_track(network, data, crit_finder_str, num_steps_gd=5000,
-                   gradient_descent_batch_size=50, gradient_descent_track_every=50,
-                    tracking_batch_size=50000, print_tracking_data=False,
-                    num_steps_crit_finder=10, crit_finder_batch_size=10000, crit_finder_track_every=1):
+def train_and_track(network, data, crit_finder_str, gd_train_and_track_params, crit_finder_train_and_track_params):
     """train network on data using gradient descent,
-    then search for critical points with crit_finder named by crit_finder_str.
+    then search for critical points with crit_finder named by crit_finder_str,
+    using training and tracking parameters given by their respective train_and_track_params.
 
-    for both phases, gradient norm and cost are tracked on each track_every,
+    note that, for both phases, gradient norm and cost are tracked on each track_every,
     while gradients and parameters are tracked only at the beginning and end.
     """
 
@@ -41,28 +39,20 @@ def train_and_track(network, data, crit_finder_str, num_steps_gd=5000,
         initializer_feed_dict = {initial_parameters: initialized_parameters}
         tf.global_variables_initializer().run(initializer_feed_dict)
 
-        gd_track_string = "gd step"
-        gd_results = run_optimizer(sess, network, data["train"], graph_dict, # accuracy, input, labels, trained_parameters, cost, gradient_op,
-                                    step_gradient_descent, num_steps_gd, gradient_descent_batch_size,
-                                   gradient_descent_track_every, tracking_batch_size, print_tracking_data, gd_track_string)
+        gd_results = run_optimizer(sess, network, data["train"], graph_dict, step_gradient_descent, *gd_train_and_track_params)
 
-        crit_finder_track_string = "crit_finder step"
-        crit_finder_results = run_optimizer(sess, network, data["train"], # accuracy, input, labels, trained_parameters, cost, gradient_op,
-                                            step_crit_finder, num_steps_crit_finder,
-                                            crit_finder_batch_size, crit_finder_track_every,
-                                            tracking_batch_size, print_tracking_data, crit_finder_track_string)
+        crit_finder_results = run_optimizer(sess, network, data["train"], step_crit_finder, *crit_finder_train_and_track_params)
 
     return gd_results, crit_finder_results
 
-def run_algorithm(sess, data, graph_dict,#accuracy, input, labels, trained_parameters, cost, gradient_op,
-                    step_algorithm,
-                  num_steps, batch_size, track_every, tracking_batch_size, print_tracking_data, track_string):
+def run_algorithm(sess, data, graph_dict, step_algorithm, num_steps, batch_size, track_every,
+                    tracking_batch_size, print_tracking_data, track_string):
     """ in the context of sess, call step_algorithm num_steps times, with each step
     drawing a batch of size batch_size from data.
 
     cost and gradient norm (scalar quantities) are stored after each track_every step,
     and before taking any steps,
-    while the gradient and parameters (vector quantities) are stored only before taking every steps
+    while the gradient and parameters (vector quantities) are stored only before taking any steps
     and on the last tracked step.
     """
     results = Results([],[],[],[],[],[])
