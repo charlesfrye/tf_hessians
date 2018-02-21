@@ -289,14 +289,14 @@ def plot_results(optimizer_results, crit_finder_results, titles):
     """
     f, axs = plt.subplots(nrows=1, ncols=2, figsize=(20,6), sharey=True)
 
-    axs[0].plot(gd_results.scalar_index, gd_results.gradient_norm, linewidth=4, color='C0')
+    axs[0].plot(optimizer_results.scalar_index, optimizer_results.gradient_norm, linewidth=4, color='C0')
 
     axs[0].set_ylabel(r"$\|\|\nabla f \|\|$",fontsize=24);
     axs[0].set_xlabel("batch index", fontsize=24);
     axs[0].tick_params(axis='both', which='major', labelsize=16)
     axs[0].set_title(names[0], fontsize=28)
 
-    axs[1].plot(np.asarray(crit_finder_results.scalar_index)+gd_results.scalar_index[-1],
+    axs[1].plot(np.asarray(crit_finder_results.scalar_index)+optimizer_results.scalar_index[-1],
              crit_finder_results.gradient_norm, linewidth=4, color='C1')
 
     axs[1].set_xlabel("batch index", fontsize=24);
@@ -339,7 +339,7 @@ def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, 
     f, axs = plt.subplots(nrows=3, ncols=1, figsize=(20,18), sharex=True, sharey=True)
     axs[0].set_yscale('log')
 
-    gradients = [gd_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
+    gradients = [optimizer_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
 
     for gradient, ax, title, color in zip(gradients, axs, titles, colors):
 
