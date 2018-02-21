@@ -1,18 +1,30 @@
+"""train networks produced by crit_finder.graphs and track the Results in a NamedTuple."""
 import tensorflow as tf
 import numpy as np
 from collections import namedtuple
 
 Results = namedtuple("Results", ["cost", "gradient_norm", "scalar_index",
-                                 "gradients", "parameters", "vector_index"])
+                                 "gradient", "parameters", "vector_index"])
 
-def train_and_track(network, data, crit_finder_str, num_steps_gd=5000, 
+#not yet implemented
+TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_size", "tracking_batch_size",
+                                                        "track_every","print_tracking_data"])
+
+def train_and_track(network, data, crit_finder_str, num_steps_gd=5000,
                    gradient_descent_batch_size=50, gradient_descent_track_every=50,
                     tracking_batch_size=50000, print_tracking_data=False,
                     num_steps_crit_finder=10, crit_finder_batch_size=10000, crit_finder_track_every=1):
-    
+    """train network on data using gradient descent,
+    then search for critical points with crit_finder named by crit_finder_str.
+
+    for both phases, gradient norm and cost are tracked on each track_every,
+    while gradients and parameters are tracked only at the beginning and end.
+    """
+
     graph = network.graph
     graph_dict = network.graph_dictionary
     hyperparameter_dictionary = network.hyperparameter_dictionary
+
     num_parameters = hyperparameter_dictionary["num_parameters"]
     total_weights = hyperparameter_dictionary["total_weights"]
     total_biases = hyperparameter_dictionary["total_biases"]
@@ -20,40 +32,49 @@ def train_and_track(network, data, crit_finder_str, num_steps_gd=5000,
                                       [0.1]*total_biases]).astype(np.float32)
 
     with tf.Session(graph=graph) as sess:
-        
-        input = graph_dict["input"]
-        labels = graph_dict["labels"]
+
         initial_parameters = graph_dict["parameters_placeholder"]
-        trained_parameters = graph_dict["parameters"]
 
         step_gradient_descent = graph_dict["step_gradient_descent"]
         step_crit_finder = graph_dict[crit_finder_str]
 
-        accuracy = graph_dict["accuracy"]
-        cost = graph_dict["cost"]
-        gradient_op = graph_dict["gradients"]
-
         initializer_feed_dict = {initial_parameters: initialized_parameters}
-        tf.global_variables_initializer().run(initializer_feed_dict)    
-        
+        tf.global_variables_initializer().run(initializer_feed_dict)
+
         gd_track_string = "gd step"
-        gd_results = run_optimizer(sess, network, data["train"], accuracy, input, labels, trained_parameters, cost,
-                                   gradient_op, step_gradient_descent, num_steps_gd, gradient_descent_batch_size,
+        gd_results = run_optimizer(sess, network, data["train"], graph_dict, # accuracy, input, labels, trained_parameters, cost, gradient_op,
+                                    step_gradient_descent, num_steps_gd, gradient_descent_batch_size,
                                    gradient_descent_track_every, tracking_batch_size, print_tracking_data, gd_track_string)
-            
+
         crit_finder_track_string = "crit_finder step"
-        crit_finder_results = run_optimizer(sess, network, data["train"], accuracy, input, labels, trained_parameters,
-                                            cost, gradient_op, step_crit_finder, num_steps_crit_finder,
+        crit_finder_results = run_optimizer(sess, network, data["train"], # accuracy, input, labels, trained_parameters, cost, gradient_op,
+                                            step_crit_finder, num_steps_crit_finder,
                                             crit_finder_batch_size, crit_finder_track_every,
                                             tracking_batch_size, print_tracking_data, crit_finder_track_string)
 
     return gd_results, crit_finder_results
 
-def run_optimizer(sess, network, data, accuracy, input, labels, trained_parameters, cost, gradient_op, step_optimizer, 
+def run_algorithm(sess, data, graph_dict,#accuracy, input, labels, trained_parameters, cost, gradient_op,
+                    step_algorithm,
                   num_steps, batch_size, track_every, tracking_batch_size, print_tracking_data, track_string):
-    
+    """ in the context of sess, call step_algorithm num_steps times, with each step
+    drawing a batch of size batch_size from data.
+
+    cost and gradient norm (scalar quantities) are stored after each track_every step,
+    and before taking any steps,
+    while the gradient and parameters (vector quantities) are stored only before taking every steps
+    and on the last tracked step.
+    """
     results = Results([],[],[],[],[],[])
-    
+
+    input = graph_dict["input"]
+    labels = graph_dict["labels"]
+
+    trained_parameters = graph_dict["parameters"]
+    accuracy = graph_dict["accuracy"]
+    cost = graph_dict["cost"]
+    gradient_op = graph_dict["gradients"]
+
     for batch_idx in range(num_steps):
 
         if (batch_idx+1 == 1):
@@ -98,11 +119,13 @@ def run_optimizer(sess, network, data, accuracy, input, labels, trained_paramete
             if (batch_idx+1)+track_every > num_steps:
                 # on last tracked iteration
                 add_to_results_vectors(results, gradients[0], parameters, batch_idx+1)
-                    
+
     return results
 
 def get_batch(data, batch_size):
-    
+    """draw, without replacement, a batch of size batch_size from data
+    """
+
     if hasattr(data, "next_batch"):
         batch_inputs, batch_labels = data.next_batch(batch_size)
     else:
@@ -110,20 +133,28 @@ def get_batch(data, batch_size):
         indices = np.random.choice(num_elements, size=batch_size, replace=False)
         batch_inputs = data["images"][indices,:]
         batch_labels = data["labels"][indices]
-    
+
     return batch_inputs, batch_labels
 
 def add_to_results_scalars(results, cost, gradient_norm, index):
+    """add scalar quantities (cost, gradient_norm)
+    to results and add the index to scalar_index
+    """
     results.cost.append(cost)
     results.gradient_norm.append(gradient_norm)
     results.scalar_index.append(index)
-    
-def add_to_results_vectors(results, gradients, parameters, index):
+
+def add_to_results_vectors(results, gradient, parameters, index):
+    """add vector quantities (gradient, parameters)
+    to results and add the index to vector_index
+    """
     results.parameters.append(parameters)
-    results.gradients.append(gradients)
+    results.gradient.append(gradient)
     results.vector_index.append(index)
-    
+
 def print_tracking(string, cost, gradient_norm, gradient_max):
+    """print string, then tab and print cost, gradient_norm, and gradient_max
+    """
     print(string)
     print("\tcost: {0:.2f}".format(cost))
     print("\tgrad_norm: {0:.10f}".format(gradient_norm))
