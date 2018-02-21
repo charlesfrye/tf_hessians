@@ -9,11 +9,8 @@ def add_gradient_ops(function, inputs, graph_dictionary):
     """
     with tf.variable_scope("gradients"):
 
-        gradients = tf.gradients(output, inputs, name="gradients")
+        gradients = tf.gradients(function, inputs, name="gradients")
         scaled_squared_gradient_norm = 0.5*tf.square(tf.norm(gradients, name="scaled_squared_gradient_norm"))
-
-        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
-        hessian_matrix = tf.hessians(function, inputs, name="hessians_output")[0]
 
     graph_dictionary.update({
                            "gradients": gradients,
