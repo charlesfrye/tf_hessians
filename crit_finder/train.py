@@ -88,7 +88,7 @@ def run_algorithm(sess, data, graph_dict, step_algorithm, num_steps, batch_size,
         train_feed_dict = {input: batch_inputs,
                        labels: batch_labels}
 
-        sess.run(step_optimizer, feed_dict=train_feed_dict)
+        sess.run(step_algorithm, feed_dict=train_feed_dict)
 
         if (batch_idx+1 == 1) or ((batch_idx+1)%track_every == 0):
 
