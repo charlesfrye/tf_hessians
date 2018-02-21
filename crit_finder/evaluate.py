@@ -339,7 +339,7 @@ def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, 
     f, axs = plt.subplots(nrows=3, ncols=1, figsize=(20,18), sharex=True, sharey=True)
     axs[0].set_yscale('log')
 
-    gradients = [optimizer_results.0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
+    gradients = [optimizer_results.gradient[0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
 
     for gradient, ax, title, color in zip(gradients, axs, titles, colors):
 
