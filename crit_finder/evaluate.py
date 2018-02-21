@@ -324,7 +324,7 @@ def plot_gradient_entrywise(ax, gradient, label):
     """ plots sorted entries of a single gradient vector on ax
     with a log-scale for x and assigns legend entry label.
     """
-    ax.semilogx(range(1,len(gradients)+1), sorted(gradients), linewidth=4, label=label)
+    ax.semilogx(range(1,len(gradient)+1), sorted(gradient), linewidth=4, label=label)
     ax.tick_params(axis='both', which='major', labelsize=16)
 
 def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, colors=['C0','C1','C2']):
