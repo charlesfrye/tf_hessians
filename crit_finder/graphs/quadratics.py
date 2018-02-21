@@ -13,7 +13,7 @@ DEFAULTS = {"learning_rate":0.1, # courtesy of Moritz Hardt and Ilya Sutskever
             "inverse_method":"fudged",
             "gradient_norm_min_rate":0.1}
 
-def make_quadratic_form(matrix, initial_values, hyperparameters):
+def make(matrix, initial_values, hyperparameters):
     """make a tensorflow graph to evaluate, minimize, and find critical points
     on the surface 0.5*x.transpose().dot(matrix).dot(x),
     the quadratic form on x defined by matrix.

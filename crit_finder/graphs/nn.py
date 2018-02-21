@@ -15,7 +15,7 @@ DEFAULTS = {"learning_rate":0.1, # courtesy of Moritz Hardt and Ilya Sutskever
             "inverse_method":"fudged",
             "gradient_norm_min_rate":0.1}
 
-def make_neural_network(hyperparameters):
+def make(hyperparameters):
     """make a tensorflow graph to evaluate, minimize, and find critical points
     on the loss surface of the neural network described by hyperparameters,
     which also describes the hyperparameters of the minimizer and critical point finder.
