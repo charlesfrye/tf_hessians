@@ -10,8 +10,8 @@ TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_siz
                                                         "track_every", "tracking_batch_size",
                                                         "print_tracking_data", "track_string"])
 
-def train_and_track(network, data, crit_finder_str, optimizer_train_and_track_params, crit_finder_train_and_track_params):
-    """train network on data using optimizer,
+def train_and_track(network, data, optimizer_str, crit_finder_str, optimizer_train_and_track_params, crit_finder_train_and_track_params):
+    """train network on data using optimizer named by optimizer_str,
     then search for critical points with crit_finder named by crit_finder_str,
     using training and tracking parameters given by their respective train_and_track_params.
 
@@ -33,7 +33,7 @@ def train_and_track(network, data, crit_finder_str, optimizer_train_and_track_pa
 
         initial_parameters = graph_dict["parameters_placeholder"]
 
-        step_optimizer = graph_dict["step_optimizer"]
+        step_optimizer = graph_dict[optimizer_str]
         step_crit_finder = graph_dict[crit_finder_str]
 
         initializer_feed_dict = {initial_parameters: initialized_parameters}
