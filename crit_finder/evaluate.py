@@ -38,7 +38,7 @@ def compare_algorithms(matrix_generator, N=5, num_steps=5, num_matrices=10, num_
 
             initial_values = np.random.standard_normal(size=N).astype(np.float32)
 
-            quadratic_form = graphs.quadratics.make_quadratic_form(matrix, initial_values, hyperparameters)
+            quadratic_form = graphs.quadratics.make(matrix, initial_values, hyperparameters)
             for step_idx in range(num_steps+1):
                 for algorithm_idx, algorithm in enumerate(algorithms):
                     _, values =  graphs.quadratics.run_optimizer(quadratic_form, algorithm, step_idx)
@@ -64,7 +64,7 @@ def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=gra
 
     initial_values = graphs.quadratics.generate_initial_values(N)
 
-    quadratic_form = graphs.quadratics.make_quadratic_form(random_matrix, initial_values, hyperparameters)
+    quadratic_form = graphs.quadratics.make(random_matrix, initial_values, hyperparameters)
 
     initial_output = graphs.quadratics.get_result("output", initial_values, quadratic_form)
     initial_gradients = graphs.quadratics.get_result("gradients", initial_values, quadratic_form)[0]
@@ -193,7 +193,7 @@ def condition_test(kappas, hyperparameters, N=1000, k=100):
         eigvals = [1]*(N-k)+k*[1/kappa]
         matrix = np.diag(eigvals).astype(np.float32)
 
-        quadratic_form = graphs.quadratics.make_quadratic_form(matrix, initial_values, hyperparameters)
+        quadratic_form = graphs.quadratics.make(matrix, initial_values, hyperparameters)
 
         _, values = graphs.quadratics.run_algorithm(quadratic_form, "newton", 1)
 
