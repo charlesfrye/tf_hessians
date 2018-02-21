@@ -7,7 +7,7 @@ import numpy as np
 from . import generic
 
 NeuralNetwork = namedtuple("NeuralNetwork",
-                           ["graph", "graph_dictionary", "hyperparameter_dictionary"])
+                           ["graph", "graph_dictionary", "hyperparameters"])
 
 DEFAULTS = {"learning_rate":0.1, # courtesy of Moritz Hardt and Ilya Sutskever
             "newton_rate":1,
@@ -69,13 +69,13 @@ def make(hyperparameters):
 
     return NeuralNetwork(graph, graph_dictionary, hyperparameters)
 
-def calculate_num_parameters(hyperparameter_dictionary):
+def calculate_num_parameters(hyperparameters):
     """calculate the number of parameters in a neural network
     from the information in hyperparameter dictionary
     """
-    layer_sizes = hyperparameter_dictionary["layer_sizes"][:]
-    input_sizes = hyperparameter_dictionary["input_size"]
-    output_size = hyperparameter_dictionary["output_size"]
+    layer_sizes = hyperparameters["layer_sizes"][:]
+    input_sizes = hyperparameters["input_size"]
+    output_size = hyperparameters["output_size"]
     layer_sizes = [input_sizes] + layer_sizes + [output_size]
 
     num_weights = np.sum(np.multiply(layer_sizes[1:],layer_sizes[:-1]))
@@ -83,18 +83,18 @@ def calculate_num_parameters(hyperparameter_dictionary):
 
     return num_weights+num_biases
 
-def make_weights_and_biases(parameters, hyperparameter_dictionary):
+def make_weights_and_biases(parameters, hyperparameters):
     """return lists of the weight matrices and bias vectors for
     the network described by hyperparameter dictionary
     by slicing and reshaping the entries of parameters
     """
-    layer_sizes = hyperparameter_dictionary["layer_sizes"][:]
-    input_sizes = hyperparameter_dictionary["input_size"]
-    output_size = hyperparameter_dictionary["output_size"]
+    layer_sizes = hyperparameters["layer_sizes"][:]
+    input_sizes = hyperparameters["input_size"]
+    output_size = hyperparameters["output_size"]
     layer_sizes = [input_sizes] + layer_sizes + [output_size]
 
     weight_matrices = make_weights(parameters, layer_sizes)
-    bias_start_index = get_bias_start_index(hyperparameter_dictionary)
+    bias_start_index = get_bias_start_index(layer_sizes, hyperparameters)
     bias_vectors = make_biases(parameters, layer_sizes, bias_start_index)
 
     return weight_matrices, bias_vectors
@@ -145,22 +145,22 @@ def make_biases(parameters, layer_sizes, bias_start_index):
 
     return bias_vectors
 
-def get_bias_start_index(layer_sizes, hyperparameter_dictonary):
+def get_bias_start_index(layer_sizes, hyperparameters):
     """determine and return the appropriate starting index for the biases
-    inside the parameters vector, and update the hyperparameter_dictionary
+    inside the parameters vector, and update the hyperparameters
     with the total numbers of weights and biases
     """
     bias_shapes = layer_sizes[1:]
     total_biases = np.sum(bias_shapes)
-    total_weights = hyperparameter_dictionary["num_parameters"]-total_biases
-    hyperparameter_dictionary["total_weights"] = total_weights
-    hyperparameter_dictionary["total_biases"] = total_biases
+    total_weights = hyperparameters["num_parameters"]-total_biases
+    hyperparameters["total_weights"] = total_weights
+    hyperparameters["total_biases"] = total_biases
     starting_index = total_weights-total_biases
 
     return starting_index
 
-def build_by_layer(input, weight_matrices, bias_vectors, hyperparameter_dictionary):
-    """build the network described by hyperparameter_dictionary layerwise
+def build_by_layer(input, weight_matrices, bias_vectors, hyperparameters):
+    """build the network described by hyperparameters layerwise
     from the layerwise lists of weight_matrices and bias_vectors,
     starting with the input and ending with an "output layer"
     that has no nonlinearity applied.
@@ -169,23 +169,23 @@ def build_by_layer(input, weight_matrices, bias_vectors, hyperparameter_dictiona
 
     for weight_matrix, bias_vector in zip(weight_matrices[:-1], bias_vectors[:-1]):
         current_output = build_layer(current_output, weight_matrix, bias_vector,
-                             hyperparameter_dictionary)
+                             hyperparameters)
 
     final_output = build_output_layer(current_output, weight_matrices[-1], bias_vectors[-1],
-                                      hyperparameter_dictionary)
+                                      hyperparameters)
 
     return final_output
 
-def build_layer(current_output, weight_matrix, bias_vector, hyperparameter_dictionary):
+def build_layer(current_output, weight_matrix, bias_vector, hyperparameters):
     """build a layer that applies affine transformation parametrized by weight_matrix and bias_vector
     to current output, applies nonlinearity, and returns the output
     """
     with tf.variable_scope("internal_layers"):
-        nonlinearity = hyperparameter_dictionary["nonlinearity"]
+        nonlinearity = hyperparameters["nonlinearity"]
         new_output = nonlinearity(tf.add(tf.matmul(current_output, weight_matrix), bias_vector))
     return new_output
 
-def build_output_layer(current_output, weight_matrix, bias_vector, hyperparameter_dictionary):
+def build_output_layer(current_output, weight_matrix, bias_vector, hyperparameters):
     """build a layer that applies the affine transformation parametrized by weight_matrix and bias_vector
     to current output and returns the output
     """
