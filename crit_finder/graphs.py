@@ -48,57 +48,19 @@ def make_quadratic_form(matrix, initial_values, hyperparameters):
                                   name='output'),
                         name='squeezed_output')
 
-        gradient_descent = tf.train.GradientDescentOptimizer(hyperparameters["learning_rate"])
-        step_gradient_descent = gradient_descent.minimize(output)
-
-        gradients = tf.gradients(output, inputs, name="gradients")
-        gradient_norm = 0.5*tf.square(tf.norm(gradients, name="gradient_norm"))
-
-        hessian_matrix = tf.hessians(output, inputs, name="hessian_matrix")[0]
-
         graph_dictionary = {"inputs": inputs,
-                           "output": output,
-                           "gradients": gradients,
-                            "step_gradient_descent": step_gradient_descent,
-                            "hessian": hessian_matrix,
-                            "gradient_norm": gradient_norm
-                           }
+                           "output": output,}
 
-        if "inverse_method" in hyperparameters.keys():
-            inverse_hessian = invert_hessian(hessian_matrix, len(initial_values), hyperparameters)
-            graph_dictionary["inverse_hessian"] = inverse_hessian
+        add_gradient_ops(output, inputs, graph_dictionary)
+        add_hess_ops(output, inputs, graph_dictionary)
 
-            if "newton_rate" in hyperparameters.keys():
-                newton_step_ct = tf.Variable(0, trainable=False)
-                newton_base = tf.train.GradientDescentOptimizer(hyperparameters["newton_rate"])
-                gd_grads_and_vars = newton_base.compute_gradients(output, inputs)
-                step_newton = add_step_newton(newton_base, gd_grads_and_vars, inverse_hessian, newton_step_ct)
-                graph_dictionary["step_newton"] = step_newton
-
-        if "gradient_norm_min_rate" in hyperparameters.keys():
-            gradmin_step_ct = tf.Variable(0, trainable=False)
-
-            if "gradient_norm_decay_rate" in hyperparameters.keys():
-                gradient_norm_min_rate =  tf.train.exponential_decay(hyperparameters["gradient_norm_min_rate"],
-                                                         newton_step_ct,
-                                                        decay_steps=100,
-                                                        decay_rate=1.0)
-            else:
-                gradient_norm_min_rate = hyperparameters["gradient_norm_min_rate"]
-
-            if "gradient_norm_momentum" in hyperparameters.keys():
-                gradient_norm_optimizer = tf.train.MomentumOptimizer(gradient_norm_min_rate,
-                                                                     hyperparameters["gradient_norm_momentum"])
-            else:
-                gradient_norm_optimizer = tf.train.GradientDescentOptimizer(gradient_norm_min_rate)
-
-            step_gradmin = gradient_norm_optimizer.minimize(gradient_norm, global_step = gradmin_step_ct)
-
-            graph_dictionary["step_gradient_norm_min"] = step_gradmin
+        add_optimizer(output, inputs, hyperparameters, graph_dictionary)
+        add_crit_finder_ops(output, inputs, dimension, hyperparameters, graph_dictionary)
 
     return QuadraticForm(graph, graph_dictionary)
 
-# neural network construction functions
+
+## neural network construction functions
 
 def make_neural_network(hyperparameters):
     """make a tensorflow graph to evaluate, minimize, and find critical points
@@ -146,58 +108,97 @@ def make_neural_network(hyperparameters):
                             "accuracy": accuracy,
                            }
 
-        with tf.variable_scope("grads_and_hess"):
+        add_gradient_ops(cost, parameters_var, graph_dictionary)
+        add_hess_ops(cost, parameters_var, graph_dictionary)
 
-            gradients = tf.gradients(cost, parameters_var, name="gradients")
-            gradient_norm = tf.square(tf.norm(gradients, name="gradient_norm"))
-            hessian_matrix = tf.hessians(cost, parameters_var, name="hessians_output")[0]
-            eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
+        add_optimizer(cost, parameters_var, hyperparameters, graph_dictionary)
+        add_crit_finder(cost, parameters_var, num_parameters, hyperparameters, graph_dictionary)
 
-            graph_dictionary.update({"gradients": gradients,
-                                     "gradient_norm": gradient_norm,
-                                     "hessian": hessian_matrix,
-                                     "eigenvalues": eigenvalues,
-                                     "eigenvectors": eigenvectors
-                                    })
+    return NeuralNetwork(graph, graph_dictionary, hyperparameters)
 
-        with tf.variable_scope("optimizers"):
+# generic functions for adding gradient ops and crit_finders to graph
 
-            with tf.variable_scope("gradient_descent"):
+def add_gradient_ops(function, inputs, graph_dictionary):
+    """adds ops to calculate gradients and scaled squared gradient norm to graph and graph_dictionary
+    to graph, calculates squared gradient norm, and adds these operations
+    to the graph_dictionary
+    """
+    with tf.variable_scope("gradients"):
 
-                gradient_descent_step_ct = tf.Variable(0, trainable=False)
-                gradient_descent_rate = hyperparameters["learning_rate"]
+        gradients = tf.gradients(output, inputs, name="gradients")
+        scaled_squared_gradient_norm = 0.5*tf.square(tf.norm(gradients, name="scaled_squared_gradient_norm"))
 
-                if "gradient_descent_decay_rate" in hyperparameters.keys():
-                    assert gradient_descent_decay_every in hyperparameters.keys(), "missing decay_steps for gradient_descent"
-                    gradient_descent_rate =  tf.train.exponential_decay(gradient_descent_rate,
-                                                                 gradient_descent_step_ct,
-                                                                decay_steps=hyperparameters["gradient_descent_decay_every"],
-                                                                decay_rate=hyperparameters["gradient_descent_decay_rate"])
+        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
+        hessian_matrix = tf.hessians(function, inputs, name="hessians_output")[0]
 
-                if "gradient_descent_momentum" in hyperparameters.keys():
-                    gradient_descent = tf.train.MomentumOptimizer(gradient_descent_rate,
-                                                                  hyperparameters["gradient_descent_momentum"])
-                else:
-                    gradient_descent = tf.train.GradientDescentOptimizer(gradient_descent_rate)
+    graph_dictionary.update({
+                           "gradients": gradients,
+                           "scaled_squared_gradient_norm": scaled_squared_gradient_norm
+                           })
 
-                step_gradient_descent = gradient_descent.minimize(cost)
+def add_hess_ops(function, inputs, graph_dictionary):
+    """adds ops to calculate and diagonalize the hessian to the graph and graph_dictionary
+    """
+    with tf.variable_scope("hessian"):
+        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
+        hessian_matrix = tf.hessians(function, inputs, name="hessians_output")[0]
 
-                graph_dictionary["step_gradient_descent"] = step_gradient_descent
+    graph_dictionary.update({
+                           "hessian": hessian_matrix,
+                           "eigenvalues": eigenvalues,
+                           "eigenvectors": eigenvectors
+                           })
 
-            with tf.variable_scope("newton"):
+def add_optimizer(function, inputs, hyperparameters, graph_dictionary):
+    """adds ops to optimize function according to hyperparameters to the graph and graph_dictionary
+    """
+    with tf.variable_scope("optimizer"):
+        optimizer_step_ct = tf.Variable(0, trainable=False)
+        optimizer_rate = hyperparameters["learning_rate"]
 
-                if "inverse_method" in hyperparameters.keys():
-                    inverse_hessian = invert_hessian(hessian_matrix, num_parameters, hyperparameters)
-                    graph_dictionary["inverse_hessian"] = inverse_hessian
+        if "optimizer_decay_rate" in hyperparameters.keys():
+            assert "optimizer_decay_every" in hyperparameters.keys(), "missing decay_steps for gradient_descent"
+            optimizer_rate =  tf.train.exponential_decay(optimizer_rate,
+                                                        optimizer_step_ct,
+                                                        decay_steps=hyperparameters["gradient_descent_decay_every"],
+                                                        decay_rate=hyperparameters["gradient_descent_decay_rate"])
 
-                    if "newton_rate" in hyperparameters.keys():
-                        newton_step_ct = tf.Variable(0, trainable=False)
-                        newton_base = tf.train.GradientDescentOptimizer(hyperparameters["newton_rate"])
-                        gd_grads_and_vars = newton_base.compute_gradients(cost, parameters_var)
-                        step_newton = add_step_newton(newton_base, gd_grads_and_vars, inverse_hessian, newton_step_ct)
-                        graph_dictionary["step_newton"] = step_newton
+        if "momentum_rate" in hyperparameters.keys():
+            optimizer = tf.train.MomentumOptimizer(optimizer_rate, hyperparameters["momentum_rate"])
+        else:
+            optimizer = tf.train.GradientDescentOptimizer(optimizer_rate)
 
-            with tf.variable_scope("gradient_norm_min"):
+        step_optimizer = optimizer.minimize(cost)
+
+    graph_dictionary["step_optimizer"] = step_optimizer
+
+
+
+def add_crit_finder(function, inputs, input_size, hyperparameters, graph_dictionary):
+    """adds ops to find critical points of function according to hyperparameters to the graph and graph_dictionary
+    """
+
+    hessian_matrix = graph_dictionary["hessian_matrix"]
+    scaled_and_squared_gradient_norm = graph_dictionary["scaled_and_squared_gradient_norm"]
+
+    with tf.variable_scope("crit_finder"):
+
+        with tf.variable_scope("newton"):
+            if "inverse_method" in hyperparameters.keys():
+                inverse_hessian = invert_hessian(hessian_matrix, input_size, hyperparameters)
+                graph_dictionary["inverse_hessian"] = inverse_hessian
+
+                if "newton_rate" in hyperparameters.keys():
+                    # add a newton step by processing the gradients of a GradientDescentOptimizer
+                    newton_step_ct = tf.Variable(0, trainable=False)
+                    newton_base = tf.train.GradientDescentOptimizer(hyperparameters["newton_rate"])
+                    gd_grads_and_vars = newton_base.compute_gradients(function, inputs)
+
+                    step_newton = add_step_newton(newton_base, gd_grads_and_vars, inverse_hessian, newton_step_ct)
+
+                    graph_dictionary["step_newton"] = step_newton
+
+        with tf.variable_scope("gradient_norm_min"):
 
                 if "gradient_norm_min_rate" in hyperparameters.keys():
                     gradmin_step_ct = tf.Variable(0, trainable=False)
@@ -217,12 +218,9 @@ def make_neural_network(hyperparameters):
                     else:
                         gradient_norm_optimizer = tf.train.GradientDescentOptimizer(gradient_norm_min_rate)
 
-                    step_gradmin = gradient_norm_optimizer.minimize(gradient_norm, global_step = gradmin_step_ct)
+                    step_gradmin = gradient_norm_optimizer.minimize(scaled_and_squared_gradient_norm, global_step = gradmin_step_ct)
 
                     graph_dictionary["step_gradient_norm_min"] = step_gradmin
-
-    return NeuralNetwork(graph, graph_dictionary, hyperparameters)
-
 # generic functions for adding second order calculations to a graph
 
 def add_step_newton(gradient_descent, gd_grads_and_vars, inverse_hessian, newton_step_ct):
@@ -410,7 +408,7 @@ def build_output_layer(current_output, weight_matrix, bias_vector, hyperparamete
         final_output = tf.add(tf.matmul(current_output, weight_matrix), bias_vector)
     return final_output
 
-# convenience functions for interacting with quadratic form graphs
+## convenience functions for interacting with quadratic form graphs
 
 def generate_initial_values(N, scaling_factor=None):
     """generate a vector of scaled random normal values.
@@ -470,7 +468,7 @@ def make_feed_dict(input_placeholders, input_vector):
 
     return feed_dict
 
-# functions for generating various random matrices
+## functions for generating various random matrices
 
 def generate_gaussian(N):
     """generate an N by N gaussian random matrix with variance N
