@@ -11,11 +11,11 @@ def add_gradient_ops(function, inputs, graph_dictionary):
 
         gradients = tf.gradients(function, inputs, name="gradients")
         gradient_norm = tf.norm(gradients, name="gradient_norm")
-        scaled_squared_gradient_norm = 0.5*tf.square(gradient_norm, name="scaled_squared_gradient_norm"))
+        scaled_squared_gradient_norm = 0.5*tf.square(gradient_norm, name="scaled_squared_gradient_norm")
 
     graph_dictionary.update({
                            "gradients": gradients,
-                           "gradient_norm": gradient_norm
+                           "gradient_norm": gradient_norm,
                            "scaled_squared_gradient_norm": scaled_squared_gradient_norm
                            })
 
