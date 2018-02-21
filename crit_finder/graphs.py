@@ -188,9 +188,9 @@ def make_neural_network(hyperparameters):
                     gradmin_step_ct = tf.Variable(0, trainable=False)
 
                     if "gradient_norm_decay_rate" in hyperparameters.keys():
-                        assert gradient_norm_decay_every in hyperparameters.keys(), "missing decay_steps for gradient_norm_min"
+                        assert "gradient_norm_decay_every" in hyperparameters.keys(), "missing decay_steps for gradient_norm_min"
                         gradient_norm_min_rate =  tf.train.exponential_decay(hyperparameters["gradient_norm_min_rate"],
-                                                                 newton_step_ct,
+                                                                 gradmin_step_ct,
                                                                 decay_steps=hyperparameters["gradient_norm_decay_every"],
                                                                 decay_rate=hyperparameters["gradient_norm_decay_rate"])
                     else:

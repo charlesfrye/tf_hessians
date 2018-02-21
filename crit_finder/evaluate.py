@@ -202,7 +202,7 @@ def plot_results(gd_results, crit_finder_results, crit_finder_name):
 
     axs[0].plot(gd_results.scalar_index, gd_results.gradient_norm, linewidth=4, color='C0')
     
-    axs[0].set_ylabel(r"$\|\|\nabla f \|\|^2$",fontsize=24);
+    axs[0].set_ylabel(r"$\|\|\nabla f \|\|$",fontsize=24);
     axs[0].set_xlabel("batch index", fontsize=24);
     axs[0].tick_params(axis='both', which='major', labelsize=16)
     axs[0].set_title("gradient descent", fontsize=28)
