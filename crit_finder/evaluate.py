@@ -294,7 +294,7 @@ def plot_results(optimizer_results, crit_finder_results, titles):
     axs[0].set_ylabel(r"$\|\|\nabla f \|\|$",fontsize=24);
     axs[0].set_xlabel("batch index", fontsize=24);
     axs[0].tick_params(axis='both', which='major', labelsize=16)
-    axs[0].set_title(names[0], fontsize=28)
+    axs[0].set_title(titles[0], fontsize=28)
 
     axs[1].plot(np.asarray(crit_finder_results.scalar_index)+optimizer_results.scalar_index[-1],
              crit_finder_results.gradient_norm, linewidth=4, color='C1')
@@ -302,7 +302,7 @@ def plot_results(optimizer_results, crit_finder_results, titles):
     axs[1].set_xlabel("batch index", fontsize=24);
     axs[1].tick_params(axis='both', which='major', labelsize=16)
     axs[1].xaxis.set_major_formatter(matplotlib.ticker.FormatStrFormatter('%d'))
-    axs[1].set_title(names[1], fontsize=28)
+    axs[1].set_title(titles[1], fontsize=28)
 
 def compare_gradients_entrywise(optimizer_results, crit_finder_results, labels):
     """compares the sorted entries of the first entry in optimizer.gradients (i.e. at initialization),
