@@ -46,11 +46,11 @@ def add_optimizer(function, inputs, hyperparameters, graph_dictionary):
 
         if "momentum_rate" in hyperparameters.keys():
             optimizer = tf.train.MomentumOptimizer(optimizer_rate, hyperparameters["momentum_rate"])
-            step_optimizer = optimizer.minimize(cost)
+            step_optimizer = optimizer.minimize(function)
             graph_dictionary["step_momentum"] = step_optimizer
         else:
             optimizer = tf.train.GradientDescentOptimizer(optimizer_rate)
-            step_optimizer = optimizer.minimize(cost)
+            step_optimizer = optimizer.minimize(function)
             graph_dictionary["step_gradient_descent"] = step_optimizer
 
 def add_crit_finder(function, inputs, input_size, hyperparameters, graph_dictionary):
