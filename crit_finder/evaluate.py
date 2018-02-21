@@ -49,7 +49,7 @@ def compare_algorithms(matrix_generator, N=5, num_steps=5, num_matrices=10, num_
     return results
 
 def normalize_runs(results):
-    """normalize results from compare_gradient_descent_methods so that each run
+    """normalize results from compare_algorthims so that each run
     starts with gradient_norm standardized to 1.
     """
     results = np.divide(results, results[0,:,:,:][None,:,:,:])
@@ -305,15 +305,15 @@ def plot_results(optimizer_results, crit_finder_results, titles):
     axs[1].set_title(titles[1], fontsize=28)
 
 def compare_gradients_entrywise(optimizer_results, crit_finder_results, labels):
-    """compares the sorted entries of the first entry in optimizer.gradients (i.e. at initialization),
-    the first entry of crit_finder_results.gradients (i.e. after optimizer has been run)
+    """compares the sorted entries of the first entry in optimizer.gradient (i.e. at initialization),
+    the first entry of crit_finder_results.gradient (i.e. after optimizer has been run)
     and the last entry of crit_finder_results (i.e. after the crit_finder has stopped running.
     legend entries are given by labels.
     the x axis is scaled logarithmically.
     """
     f, ax = plt.subplots(nrows=1, ncols=1, figsize=(20,6),)
 
-    gradients = [optimizer_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
+    gradients = [optimizer_results.0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
 
     for gradient, label in zip(gradients, labels):
         plot_gradient_entrywise(ax, gradient, label=label)
@@ -329,8 +329,8 @@ def plot_gradient_entrywise(ax, gradient, label):
 
 def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, colors=['C0','C1','C2']):
     """compares the log-scaled histogram of gradient entries for
-    the first entry in optimizer_results.gradients (i.e. at initialization),
-    the first entry of crit_finder_results.gradients (i.e. after optimizer has been run)
+    the first entry in optimizer_results.gradient (i.e. at initialization),
+    the first entry of crit_finder_results.gradient (i.e. after optimizer has been run)
     and the last entry of crit_finder_results (i.e. after the crit_finder has stopped running.
 
 
@@ -339,7 +339,7 @@ def compare_gradient_histograms(optimizer_results, crit_finder_results, titles, 
     f, axs = plt.subplots(nrows=3, ncols=1, figsize=(20,18), sharex=True, sharey=True)
     axs[0].set_yscale('log')
 
-    gradients = [optimizer_results.gradients[0], crit_finder_results.gradients[0], crit_finder_results.gradients[-1]]
+    gradients = [optimizer_results.0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
 
     for gradient, ax, title, color in zip(gradients, axs, titles, colors):
 
