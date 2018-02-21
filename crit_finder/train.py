@@ -11,7 +11,7 @@ TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_siz
                                                         "print_tracking_data", "track_string"])
 
 def train_and_track(network, data, crit_finder_str, optimizer_train_and_track_params, crit_finder_train_and_track_params):
-    """train network on data using gradient descent,
+    """train network on data using optimizer,
     then search for critical points with crit_finder named by crit_finder_str,
     using training and tracking parameters given by their respective train_and_track_params.
 
