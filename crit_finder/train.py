@@ -10,7 +10,7 @@ TrainAndTrackParams = namedtuple("TrainAndTrackParams", ["num_steps", "batch_siz
                                                         "track_every", "tracking_batch_size",
                                                         "print_tracking_data", "track_string"])
 
-def train_and_track(network, data, crit_finder_str, gd_train_and_track_params, crit_finder_train_and_track_params):
+def train_and_track(network, data, crit_finder_str, optimizer_train_and_track_params, crit_finder_train_and_track_params):
     """train network on data using gradient descent,
     then search for critical points with crit_finder named by crit_finder_str,
     using training and tracking parameters given by their respective train_and_track_params.
@@ -33,13 +33,13 @@ def train_and_track(network, data, crit_finder_str, gd_train_and_track_params, c
 
         initial_parameters = graph_dict["parameters_placeholder"]
 
-        step_gradient_descent = graph_dict["step_gradient_descent"]
+        step_optimizer = graph_dict["step_optimizer"]
         step_crit_finder = graph_dict[crit_finder_str]
 
         initializer_feed_dict = {initial_parameters: initialized_parameters}
         tf.global_variables_initializer().run(initializer_feed_dict)
 
-        gd_results = run_optimizer(sess, network, data["train"], graph_dict, step_gradient_descent, *gd_train_and_track_params)
+        optimizer_results = run_optimizer(sess, network, data["train"], graph_dict, step_optimizer, *optimizer_train_and_track_params)
 
         crit_finder_results = run_optimizer(sess, network, data["train"], step_crit_finder, *crit_finder_train_and_track_params)
 
