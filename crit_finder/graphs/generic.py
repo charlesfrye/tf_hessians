@@ -25,7 +25,7 @@ def add_hess_ops(function, inputs, graph_dictionary):
         eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
 
     graph_dictionary.update({
-                           "hessian": hessian_matrix,
+                           "hessian_matrix": hessian_matrix,
                            "eigenvalues": eigenvalues,
                            "eigenvectors": eigenvectors
                            })
