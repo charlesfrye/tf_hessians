@@ -58,7 +58,7 @@ def add_crit_finder(function, inputs, input_size, hyperparameters, graph_diction
     """
 
     hessian_matrix = graph_dictionary["hessian_matrix"]
-    scaled_and_squared_gradient_norm = graph_dictionary["scaled_and_squared_gradient_norm"]
+    scaled_squared_gradient_norm = graph_dictionary["scaled_squared_gradient_norm"]
 
     with tf.variable_scope("crit_finder"):
 
@@ -97,7 +97,7 @@ def add_crit_finder(function, inputs, input_size, hyperparameters, graph_diction
                     else:
                         gradient_norm_optimizer = tf.train.GradientDescentOptimizer(gradient_norm_min_rate)
 
-                    step_gradmin = gradient_norm_optimizer.minimize(scaled_and_squared_gradient_norm, global_step = gradmin_step_ct)
+                    step_gradmin = gradient_norm_optimizer.minimize(scaled_squared_gradient_norm, global_step = gradmin_step_ct)
 
                     graph_dictionary["step_gradient_norm_min"] = step_gradmin
 
