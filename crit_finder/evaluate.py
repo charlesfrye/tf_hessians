@@ -42,7 +42,7 @@ def compare_algorithms(matrix_generator, N=5, num_steps=5, num_matrices=10, num_
             quadratic_form = graphs.quadratics.make(matrix, initial_values, hyperparameters)
             for step_idx in range(num_steps+1):
                 for algorithm_idx, algorithm in enumerate(algorithms):
-                    _, values =  graphs.quadratics.run_optimizer(quadratic_form, algorithm, step_idx)
+                    _, values =  graphs.quadratics.run_algorithm(quadratic_form, algorithm, step_idx)
                     results[step_idx, matrix_idx, run_idx, algorithm_idx] = graphs.quadratics.get_result("gradient_norm",
                                                                            values, quadratic_form)
 
