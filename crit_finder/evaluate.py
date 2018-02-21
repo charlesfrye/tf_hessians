@@ -313,7 +313,7 @@ def compare_gradients_entrywise(optimizer_results, crit_finder_results, labels):
     """
     f, ax = plt.subplots(nrows=1, ncols=1, figsize=(20,6),)
 
-    gradients = [optimizer_results.0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
+    gradients = [optimizer_results.gradient[0], crit_finder_results.gradient[0], crit_finder_results.gradient[-1]]
 
     for gradient, label in zip(gradients, labels):
         plot_gradient_entrywise(ax, gradient, label=label)
