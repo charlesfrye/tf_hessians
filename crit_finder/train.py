@@ -39,9 +39,9 @@ def train_and_track(network, data, optimizer_str, crit_finder_str, optimizer_tra
         initializer_feed_dict = {initial_parameters: initialized_parameters}
         tf.global_variables_initializer().run(initializer_feed_dict)
 
-        optimizer_results = run_algorithm(sess, network, data["train"], graph_dict, step_optimizer, *optimizer_train_and_track_params)
+        optimizer_results = run_algorithm(sess, network, data, graph_dict, step_optimizer, *optimizer_train_and_track_params)
 
-        crit_finder_results = run_algorithm(sess, network, data["train"], step_crit_finder, *crit_finder_train_and_track_params)
+        crit_finder_results = run_algorithm(sess, network, data, step_crit_finder, *crit_finder_train_and_track_params)
 
     return gd_results, crit_finder_results
 
