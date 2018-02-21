@@ -21,11 +21,11 @@ def train_and_track(network, data, optimizer_str, crit_finder_str, optimizer_tra
 
     graph = network.graph
     graph_dict = network.graph_dictionary
-    hyperparameter_dictionary = network.hyperparameter_dictionary
+    hyperparameters = network.hyperparameters
 
-    num_parameters = hyperparameter_dictionary["num_parameters"]
-    total_weights = hyperparameter_dictionary["total_weights"]
-    total_biases = hyperparameter_dictionary["total_biases"]
+    num_parameters = hyperparameters["num_parameters"]
+    total_weights = hyperparameters["total_weights"]
+    total_biases = hyperparameters["total_biases"]
     initialized_parameters = np.hstack([0.1*np.random.standard_normal(size=total_weights),
                                       [0.1]*total_biases]).astype(np.float32)
 
