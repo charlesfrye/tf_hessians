@@ -41,7 +41,7 @@ def train_and_track(network, data, optimizer_str, crit_finder_str, optimizer_tra
 
         optimizer_results = run_algorithm(sess, data, graph_dict, step_optimizer, *optimizer_train_and_track_params)
 
-        crit_finder_results = run_algorithm(sess, data, step_crit_finder, *crit_finder_train_and_track_params)
+        crit_finder_results = run_algorithm(sess, data, graph_dict, step_crit_finder, *crit_finder_train_and_track_params)
 
     return gd_results, crit_finder_results
 
