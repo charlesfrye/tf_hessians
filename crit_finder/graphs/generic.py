@@ -21,8 +21,8 @@ def add_hess_ops(function, inputs, graph_dictionary):
     """adds ops to calculate and diagonalize the hessian to the graph and graph_dictionary
     """
     with tf.variable_scope("hessian"):
-        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
         hessian_matrix = tf.hessians(function, inputs, name="hessians_output")[0]
+        eigenvalues, eigenvectors = tf.self_adjoint_eig(hessian_matrix)
 
     graph_dictionary.update({
                            "hessian": hessian_matrix,
