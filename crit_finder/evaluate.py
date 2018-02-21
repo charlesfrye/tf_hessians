@@ -71,7 +71,7 @@ def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=gra
     initial_gradients = graphs.quadratics.get_result("gradients", initial_values, quadratic_form)[0]
 
     final_output, final_values = graphs.quadratics.run_algorithm(quadratic_form, algorithm, num_steps)
-    final_gradients = graphs.get_result("gradients", final_values, quadratic_form)[0]
+    final_gradients = graphs.quadratics.get_result("gradients", final_values, quadratic_form)[0]
 
     print("output:\n" +
           "\tinitial: {0}".format(initial_output),
