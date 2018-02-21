@@ -5,6 +5,8 @@ from collections import namedtuple
 import tensorflow as tf
 import numpy as np
 
+from . import generic
+
 QuadraticForm = namedtuple("QuadraticForm", ["graph", "graph_dictionary"])
 
 DEFAULTS = {"learning_rate":0.1, # courtesy of Moritz Hardt and Ilya Sutskever
