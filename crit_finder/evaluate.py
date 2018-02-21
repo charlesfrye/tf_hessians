@@ -8,8 +8,9 @@ import seaborn as sns
 import numpy as np
 import scipy.integrate
 
+import inspect
 
-## functions for testing the performance of descent methods on quadratic forms
+## functions for examining the behavior of algorithms on quadratic forms
 
 def compare_algorithms(matrix_generator, N=5, num_steps=5, num_matrices=10, num_runs=5,
                             algorithms=["gradient_descent","newton"],
@@ -54,7 +55,7 @@ def normalize_runs(results):
     results = np.divide(results, results[0,:,:,:][None,:,:,:])
     return results
 
-def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=graphs.DEFAULTS):
+def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=graphs.quadratics.DEFAULTS):
     """output the initial and final outputs and gradient norms found by taking num_steps of algorithm
     with provided hyperparameters on a matrix returned by matrix_generator,
     a function that takes an argument N and returns an N by N matrix.
@@ -83,18 +84,18 @@ def gradient_test(N, matrix_generator, algorithm, num_steps, hyperparameters=gra
 
 # functions for plotting performance on quadratic forms
 
-def plot_trajectories_comparison(results, methods=["gradient_descent","newton"],
+def plot_trajectories_comparison(results, algorithms=["gradient_descent","newton"],
                                  colors=["salmon","darkolivegreen","medium_blue"]):
     """plots the (normalized) gradient norms in results as a function of step count,
-    for each method in methods, with colors given by colors.
+    for each algorithm in algorithms, with colors given by colors.
     """
     f = plt.figure(figsize=(16,4))
     ax = plt.subplot(111)
     for matrix_idx in range(results.shape[1]):
-        for method_idx in range(results.shape[3]):
-            color = colors[method_idx]
-            method = methods[method_idx]
-            plt.plot(results[:,matrix_idx,:,method_idx], color=color, linewidth=1, alpha=0.5, label=method);
+        for algorithm_idx in range(results.shape[3]):
+            color = colors[algorithm]
+            algorithm = algorithms[algorithm_idx]
+            plt.plot(results[:,matrix_idx,:,algorithm_idx], color=color, linewidth=1, alpha=0.5, label=algorithm);
 
     plt.legend()
     ax.set_ylabel(r"Normalized $\|\nabla f\|^2$",fontsize=16, fontweight="bold")
@@ -103,8 +104,8 @@ def plot_trajectories_comparison(results, methods=["gradient_descent","newton"],
     ax.set_yticks([0,1]);
     ax.set_xticks(range(0,1+int(max(ax.get_xlim()))));
 
-def plot_benefit(results, methods=["gradient_descent","newton"]):
-    """plots the difference in gradient norm between methods[1] and methods[0]
+def plot_benefit(results, algorithms=["gradient_descent","newton"]):
+    """plots the difference in gradient norm between algorithms[1] and algorithms[0]
     on a per-run basis.
     """
     f = plt.figure(figsize=(16,8))
@@ -117,13 +118,28 @@ def plot_benefit(results, methods=["gradient_descent","newton"]):
     plt.hlines(0,*xlim, linewidth=4)
     ax.set_xlim(xlim)
 
-    ax.set_ylabel(r"$\leftarrow$"+ "{0} better".format(methods[1]) +
-                  "\t\t\t"+ "{0} better".format(methods[0]) + r"$\rightarrow$",
+    ax.set_ylabel(r"$\leftarrow$"+ "{0} better".format(algorithms[1]) +
+                  "\t\t\t"+ "{0} better".format(algorithms[0]) + r"$\rightarrow$",
                   fontsize=16, fontweight="bold")
     ax.set_xlabel("Iteration Number",fontsize=16, fontweight="bold")
     ax.set_xticks(range(0,1+int(max(ax.get_xlim()))));
 
-# functions for plotting spectral distributions
+## functions for plotting spectral distributions
+
+def wigner_semicircle(lam):
+    return 1/(2*np.pi)*np.sqrt(2**2-lam**2)
+
+def plot_wigner_comparison(eigvals):
+    plt.figure(figsize=(16,6))
+    N = len(eigvals)
+    sns.distplot(eigvals, kde=False, bins=max(N//20,10),
+                 hist_kws={"normed":True, "histtype":"step", "linewidth":8, "alpha":0.8},
+                label="empirical spectral density");
+    
+    lams = np.linspace(-2, 2, 100);
+    plt.plot(lams, wigner_semicircle(lams),linewidth=8, label="expected spectral density");
+    plt.ylabel(r"$\rho\left(\lambda\right)$", fontsize=24); plt.xlabel(r"$\lambda$", fontsize=24);
+    plt.legend(fontsize=16, loc=8);
 
 def marchenkopastur_density(x, N, k, sigma=1):
     """the density for the non-singular portion of the marchenko-pastur distribution,
@@ -167,6 +183,10 @@ def plot_marchenko_comparison(eigvals, N, k, eps=1e-6):
     plt.ylabel(r"$P(\Lambda \leq \lambda)$", fontsize=24)
     plt.xlabel(r"$\lambda$", fontsize=24)
     plt.legend(fontsize=16,loc=8);
+
+def display_function(function):
+    lines = inspect.getsourcelines(function)
+    print("".join(lines[0]))
 
 ## functions for testing when Newton's method fails to converge
 
